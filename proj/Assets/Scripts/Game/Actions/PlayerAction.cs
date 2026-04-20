@@ -4,10 +4,18 @@ namespace AI4GamesFinalProj.Gameplay
 {
     public sealed class PlayerAction
     {
-        private readonly Func<Attempt, bool> canExecute;
-        private readonly Action<Attempt> execute;
+        private readonly Func<PlayerActionContext, bool> canExecute;
+        private readonly Action<PlayerActionContext> execute;
 
-        public PlayerAction(string id, string displayName, string description, Func<Attempt, bool> canExecute, Action<Attempt> execute)
+        public string Id { get; }
+
+        public string DisplayName { get; }
+
+        public string Description { get; }
+
+
+        public PlayerAction(string id, string displayName, string description,
+                            Func<PlayerActionContext, bool> canExecute, Action<PlayerActionContext> execute)
         {
             if (string.IsNullOrWhiteSpace(id))
             {
@@ -22,37 +30,32 @@ namespace AI4GamesFinalProj.Gameplay
             Id = id;
             DisplayName = displayName;
             Description = description ?? string.Empty;
+
             this.canExecute = canExecute ?? AlwaysAvailable;
             this.execute = execute ?? throw new ArgumentNullException(nameof(execute));
         }
 
-        public string Id { get; }
-
-        public string DisplayName { get; }
-
-        public string Description { get; }
-
-        public bool CanExecute(Attempt attempt)
+        public bool CanExecute(PlayerActionContext context)
         {
-            if (attempt == null)
+            if (context == null)
             {
-                throw new ArgumentNullException(nameof(attempt));
+                throw new ArgumentNullException(nameof(context));
             }
 
-            return canExecute(attempt);
+            return canExecute(context);
         }
 
-        public void Apply(Attempt attempt)
+        public void Apply(PlayerActionContext context)
         {
-            if (!CanExecute(attempt))
+            if (!CanExecute(context))
             {
                 throw new InvalidOperationException($"Action '{DisplayName}' cannot be executed right now.");
             }
 
-            execute(attempt);
+            execute(context);
         }
 
-        private static bool AlwaysAvailable(Attempt attempt)
+        private static bool AlwaysAvailable(PlayerActionContext context)
         {
             return true;
         }

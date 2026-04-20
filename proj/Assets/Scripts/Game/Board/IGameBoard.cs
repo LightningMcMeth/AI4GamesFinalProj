@@ -13,9 +13,7 @@ namespace AI4GamesFinalProj.Gameplay
 
         IBoardCell GetCell(Vector3 coords);
 
-        IEnumerable<IBoardCell> GetNeighbors(
-            Vector3 coords,
-            NeighborhoodType neighborhoodType = NeighborhoodType.Moore);
+        IEnumerable<IBoardCell> GetNeighbors(Vector3 coords, NeighborhoodType neighborhoodType = NeighborhoodType.Moore);
     }
 
     public enum NeighborhoodType

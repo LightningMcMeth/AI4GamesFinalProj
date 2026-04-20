@@ -11,24 +11,32 @@ namespace AI4GamesFinalProj.Gameplay
             this.cellularAutomataEngine = cellularAutomataEngine ?? throw new ArgumentNullException(nameof(cellularAutomataEngine));
         }
 
-        public bool TryResolvePlayerTurn(Attempt attempt, PlayerAction chosenAction)
+        public bool TryResolvePlayerTurn(Attempt attempt, PlayerActionRequest request, out PlayerAction resolvedAction)
         {
+            resolvedAction = null;
+
             if (attempt == null)
             {
                 throw new ArgumentNullException(nameof(attempt));
             }
 
-            if (chosenAction == null)
+            if (request == null)
             {
-                throw new ArgumentNullException(nameof(chosenAction));
+                throw new ArgumentNullException(nameof(request));
             }
 
-            if (attempt.IsComplete || !chosenAction.CanExecute(attempt))
+            if (attempt.IsComplete || !attempt.TryGetAction(request.ActionId, out PlayerAction chosenAction))
             {
                 return false;
             }
 
-            chosenAction.Apply(attempt);
+            PlayerActionContext context = attempt.CreateActionContext(request);
+            if (!chosenAction.CanExecute(context))
+            {
+                return false;
+            }
+
+            chosenAction.Apply(context);
 
             if (!attempt.World.TryAdvanceTick())
             {
@@ -36,6 +44,7 @@ namespace AI4GamesFinalProj.Gameplay
             }
 
             cellularAutomataEngine.Step(attempt);
+            resolvedAction = chosenAction;
             return true;
         }
     }

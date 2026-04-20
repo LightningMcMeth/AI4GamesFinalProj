@@ -23,14 +23,33 @@ namespace AI4GamesFinalProj.Gameplay
 
         public IReadOnlyList<PlayerAction> AvailableActions => Player.Actions;
 
-        public IEnumerable<PlayerAction> GetExecutableActions()
+        public IEnumerable<PlayerAction> GetExecutableActions(PlayerActionRequest request)
         {
-            return AvailableActions.Where(action => action.CanExecute(this));
+            if (request == null)
+            {
+                throw new ArgumentNullException(nameof(request));
+            }
+
+            return AvailableActions.Where(action => action.CanExecute(CreateActionContext(request.ForAction(action.Id))));
         }
 
-        public void Run()
+        public PlayerActionContext CreateActionContext(PlayerActionRequest request)
         {
-            
+            return new PlayerActionContext(this, request);
+        }
+
+        public bool TryGetAction(string actionId, out PlayerAction action)
+        {
+            if (string.IsNullOrWhiteSpace(actionId))
+            {
+                action = null;
+                
+                return false;
+            }
+
+            action = AvailableActions.FirstOrDefault(candidate => string.Equals(candidate.Id, actionId, StringComparison.OrdinalIgnoreCase));
+
+            return action != null;
         }
     }
 }
