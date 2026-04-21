@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace AI4GamesFinalProj.Gameplay
@@ -21,6 +22,22 @@ namespace AI4GamesFinalProj.Gameplay
 
         public IGameBoard Board => Attempt.Board;
 
+        public SquareGameBoard SquareBoard => Attempt.Board as SquareGameBoard;
+
+        public IReadOnlyList<PlayerActionOffer> CurrentOffers => Attempt.CurrentOffers;
+
         public Vector3? TargetCoords => Request.TargetCoords;
+
+        public bool TryGetTargetCell(out BoardCell cell)
+        {
+            cell = null;
+
+            if (!TargetCoords.HasValue)
+            {
+                return false;
+            }
+
+            return Attempt.TryGetCell(TargetCoords.Value, out cell);
+        }
     }
 }

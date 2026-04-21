@@ -5,17 +5,24 @@ namespace AI4GamesFinalProj.Gameplay
     public sealed class PlayerAction
     {
         private readonly Func<PlayerActionContext, bool> canExecute;
+        private readonly Func<PlayerActionContext, float> score;
         private readonly Action<PlayerActionContext> execute;
 
         public string Id { get; }
-
         public string DisplayName { get; }
-
         public string Description { get; }
+        public int ManaCost { get; }
+        public int EssenceCost { get; }
 
-
-        public PlayerAction(string id, string displayName, string description,
-                            Func<PlayerActionContext, bool> canExecute, Action<PlayerActionContext> execute)
+        public PlayerAction(
+            string id,
+            string displayName,
+            string description,
+            int manaCost,
+            int essenceCost,
+            Func<PlayerActionContext, float> score,
+            Func<PlayerActionContext, bool> canExecute,
+            Action<PlayerActionContext> execute)
         {
             if (string.IsNullOrWhiteSpace(id))
             {
@@ -30,7 +37,10 @@ namespace AI4GamesFinalProj.Gameplay
             Id = id;
             DisplayName = displayName;
             Description = description ?? string.Empty;
+            ManaCost = Math.Max(0, manaCost);
+            EssenceCost = Math.Max(0, essenceCost);
 
+            this.score = score ?? NoUtility;
             this.canExecute = canExecute ?? AlwaysAvailable;
             this.execute = execute ?? throw new ArgumentNullException(nameof(execute));
         }
@@ -43,6 +53,16 @@ namespace AI4GamesFinalProj.Gameplay
             }
 
             return canExecute(context);
+        }
+
+        public float Score(PlayerActionContext context)
+        {
+            if (context == null)
+            {
+                throw new ArgumentNullException(nameof(context));
+            }
+
+            return Math.Max(0f, score(context));
         }
 
         public void Apply(PlayerActionContext context)
@@ -58,6 +78,11 @@ namespace AI4GamesFinalProj.Gameplay
         private static bool AlwaysAvailable(PlayerActionContext context)
         {
             return true;
+        }
+
+        private static float NoUtility(PlayerActionContext context)
+        {
+            return 0f;
         }
     }
 }

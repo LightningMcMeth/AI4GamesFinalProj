@@ -225,7 +225,7 @@ Camera:
   far clip plane: 1000
   field of view: 34
   orthographic: 1
-  orthographic size: 5
+  orthographic size: 7.08
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -250,7 +250,7 @@ Transform:
   m_GameObject: {fileID: 519420028}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -10}
+  m_LocalPosition: {x: 5.78, y: 6.27, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -349,6 +349,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1514836726}
+  - component: {fileID: 1514836727}
+  - component: {fileID: 1514836729}
+  - component: {fileID: 1514836728}
   m_Layer: 0
   m_Name: AttemptController
   m_TagString: Untagged
@@ -371,6 +374,85 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1514836727
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1514836725}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9ed6812a44b98a4ca5027d0e80c1856, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AI4GamesFinalProj.Gameplay.AttemptController
+  autoStartPrototypeOnPlay: 1
+  totalTicks: 30
+  boardWidth: 12
+  boardHeight: 12
+  boardSeed: 13123
+  playerName: Wizard
+  startingMana: 3
+  startingVitality: 2
+  maxPlayerActionsPerTurn: 2
+  vitalityUpkeepPerTurn: 1
+  startingEssence: 4
+  enableKeyboardDebugInput: 1
+  logTurnFlow: 1
+  boardPrefabs:
+    CellParent: {fileID: 0}
+    GeometryParent: {fileID: 0}
+    GeometryPlaceholderPrefab: {fileID: 0}
+    BoardOrigin: {x: 0, y: 0, z: 0}
+    CellSpacing: 1.1
+    CellDepth: 0
+    CellScale: {x: 1, y: 1, z: 1}
+    CellRotationEuler: {x: 0, y: 0, z: 0}
+    ShowCellStatusText: 1
+    StatusTextOffset: {x: 0, y: 0.75, z: 0}
+    StatusTextScale: {x: 0.2, y: 0.2, z: 0.2}
+    HealthyLandPrefab: {fileID: 5813866646800936787, guid: b24473156c61bda47997a345b33140f2, type: 3}
+    CorruptedLandPrefab: {fileID: 5505440977909643980, guid: 19c1e49ffb0e6764f893f59021c45b51, type: 3}
+    ManaSpringPrefab: {fileID: 4060100280326421518, guid: 3426845fc5d3e0548ba3b5ea6cbace90, type: 3}
+    LifeRootPrefab: {fileID: 5927295953822784230, guid: 2574126ffea1d384e901d7227c982ea9, type: 3}
+    SacredCellPrefab: {fileID: 6358268677799968754, guid: e84b83a5cf0cd74409d1af0e54d42936, type: 3}
+    DeadCellPrefab: {fileID: 7377895107724852626, guid: 34116a4cb9721d74a9db5af026305203, type: 3}
+--- !u!114 &1514836728
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1514836725}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 713590f5785947e2a3c73b5d151bc08c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AI4GamesFinalProj.Gameplay.GameplayHudView
+  attemptController: {fileID: 0}
+  hudRect:
+    serializedVersion: 2
+    x: 16
+    y: 16
+    width: 230
+    height: 450
+  headerTitle: Wizard Territory
+  showKeyboardHints: 1
+--- !u!114 &1514836729
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1514836725}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 14a4f14f5ca6444cae05976751df754f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AI4GamesFinalProj.Gameplay.BoardView
+  attemptController: {fileID: 1514836727}
+  rebuildBoardOnAttemptStart: 1
+  clearBoardWhenAttemptEnds: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

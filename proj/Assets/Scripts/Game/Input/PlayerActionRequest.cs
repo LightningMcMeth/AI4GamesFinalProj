@@ -5,6 +5,8 @@ namespace AI4GamesFinalProj.Gameplay
 {
     public sealed class PlayerActionRequest
     {
+        public const string EndTurnActionId = "__end_turn__";
+
         public PlayerActionRequest(
             string actionId,
             PlayerInputKind inputKind = PlayerInputKind.Ui,
@@ -32,9 +34,18 @@ namespace AI4GamesFinalProj.Gameplay
 
         public bool HasTarget => TargetCoords.HasValue;
 
+        public bool IsEndTurnRequest => string.Equals(ActionId, EndTurnActionId, StringComparison.Ordinal);
+
         public PlayerActionRequest ForAction(string actionId)
         {
             return new PlayerActionRequest(actionId, InputKind, TargetCoords, InputBindingId);
+        }
+
+        public static PlayerActionRequest CreateEndTurnRequest(
+            PlayerInputKind inputKind = PlayerInputKind.Ui,
+            string inputBindingId = null)
+        {
+            return new PlayerActionRequest(EndTurnActionId, inputKind, null, inputBindingId);
         }
     }
 
