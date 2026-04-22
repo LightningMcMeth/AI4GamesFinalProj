@@ -15,7 +15,7 @@ namespace AI4GamesFinalProj.Gameplay
         public Vector3 CellScale = Vector3.one;
         public Vector3 CellRotationEuler = Vector3.zero;
         public bool ShowCellStatusText = true;
-        public Vector3 StatusTextOffset = new Vector3(0f, 0.6f, -0.1f);
+        public Vector3 StatusTextOffset = new Vector3(0f, -0.30f, 0f);
         public Vector3 StatusTextScale = new Vector3(0.2f, 0.2f, 0.2f);
         public GameObject HealthyLandPrefab;
         public GameObject CorruptedLandPrefab;
