@@ -1,3 +1,7 @@
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -32,7 +36,7 @@ namespace AI4GamesFinalProj.Gameplay
 
             currentCell = cell;
             Coords = cell.Coords;
-            name = $"CellView_{cell.X}_{cell.Y}_{cell.Type}";
+            name = $"[{cell.X},{cell.Y}]";
             transform.localPosition = prefabLibrary.GetCellWorldPosition(cell);
             transform.localRotation = prefabLibrary.GetCellRotation();
             transform.localScale = prefabLibrary.CellScale;
@@ -40,6 +44,7 @@ namespace AI4GamesFinalProj.Gameplay
             if (forceVisualRebuild || currentVisual == null || currentVisualType != cell.Type)
             {
                 RebuildVisual(cell.Type);
+                SetEditorIcon();
             }
 
             UpdateFallbackTint();
@@ -183,5 +188,29 @@ namespace AI4GamesFinalProj.Gameplay
             statusText.characterSize = 0.1f;
             statusText.fontSize = 32;
         }
+
+#if UNITY_EDITOR
+        private void SetEditorIcon()
+        {
+            if (currentCell == null)
+                return;
+
+            Texture2D icon = currentCell.Type switch
+            {
+                CellType.HealthyLand => EditorGUIUtility.IconContent("sv_label_3").image as Texture2D,   // green
+                CellType.CorruptedLand => EditorGUIUtility.IconContent("sv_label_6").image as Texture2D, // red
+                CellType.ManaSpring => EditorGUIUtility.IconContent("sv_label_1").image as Texture2D,    // blue
+                CellType.LifeRoot => EditorGUIUtility.IconContent("sv_label_2").image as Texture2D,      // teal
+                CellType.SacredCell => EditorGUIUtility.IconContent("sv_label_4").image as Texture2D,    // yellow
+                CellType.DeadCell => EditorGUIUtility.IconContent("sv_label_0").image as Texture2D,      // gray
+                _ => null
+            };
+
+            if (icon != null)
+            {
+                EditorGUIUtility.SetIconForObject(gameObject, icon);
+            }
+        }
+#endif
     }
 }

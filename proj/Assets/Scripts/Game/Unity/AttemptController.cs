@@ -32,15 +32,15 @@ namespace AI4GamesFinalProj.Gameplay
 
         [SerializeField]
         [Min(0)]
-        private int startingMana = 6;
+        private int startingMana = 0;
 
         [SerializeField]
         [Min(1)]
-        private int startingVitality = 5;
+        private int startingVitality = 0;
 
         [SerializeField]
         [Min(1)]
-        private int maxPlayerActionsPerTurn = 2;
+        private int maxPlayerActionsPerTurn = 0;
 
         [SerializeField]
         [Min(0)]
@@ -48,10 +48,13 @@ namespace AI4GamesFinalProj.Gameplay
 
         [SerializeField]
         [Min(0)]
-        private int startingEssence = 1;
+        private int startingEssence = 0;
 
         [SerializeField]
         private bool enableKeyboardDebugInput = true;
+
+        [SerializeField]
+        private bool enablePlayerActions = false;
 
         [SerializeField]
         private bool logTurnFlow = true;
@@ -132,12 +135,13 @@ namespace AI4GamesFinalProj.Gameplay
 
             CurrentAttempt = new Attempt(world, board, player);
             AttemptTurnProcessor turnProcessor = new AttemptTurnProcessor();
-            
+
             attemptRunner = new AttemptRunner(
                 CurrentAttempt,
                 new UtilityAiTurnDriver(new CellularAutomataEngine(automataRules), turnProcessor),
                 turnProcessor,
-                new UtilityAiActionSelector());
+                new UtilityAiActionSelector(),
+                enablePlayerActions);
 
             attemptRunner.AttemptStarted += HandleAttemptStarted;
             attemptRunner.WaitingForPlayerInput += HandleWaitingForPlayerInput;

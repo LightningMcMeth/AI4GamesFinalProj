@@ -10,6 +10,8 @@ namespace AI4GamesFinalProj.Gameplay
         private readonly UtilityAiActionSelector actionSelector;
         private readonly UtilityAiTurnDriver turnDriver;
 
+        private readonly bool enablePlayerActions;
+
         public Attempt Attempt { get; }
 
         public AttemptLoopState State { get; private set; }
@@ -25,12 +27,14 @@ namespace AI4GamesFinalProj.Gameplay
             Attempt attempt,
             UtilityAiTurnDriver turnDriver,
             AttemptTurnProcessor turnProcessor,
-            UtilityAiActionSelector actionSelector)
+            UtilityAiActionSelector actionSelector,
+            bool enablePlayerActions = true)
         {
             Attempt = attempt ?? throw new ArgumentNullException(nameof(attempt));
             this.turnDriver = turnDriver ?? throw new ArgumentNullException(nameof(turnDriver));
             this.turnProcessor = turnProcessor ?? throw new ArgumentNullException(nameof(turnProcessor));
             this.actionSelector = actionSelector ?? throw new ArgumentNullException(nameof(actionSelector));
+            this.enablePlayerActions = enablePlayerActions;
             State = AttemptLoopState.NotStarted;
         }
 
@@ -62,6 +66,12 @@ namespace AI4GamesFinalProj.Gameplay
 
         public void Update()
         {
+            if (State == AttemptLoopState.ResolvingTurn && !enablePlayerActions)
+            {
+                FinalizeCurrentTurn();
+                return;
+            }
+
             if (State != AttemptLoopState.WaitingForPlayerInput || pendingRequests.Count == 0)
             {
                 return;
@@ -72,7 +82,8 @@ namespace AI4GamesFinalProj.Gameplay
 
             if (request.IsEndTurnRequest)
             {
-                if (!Attempt.CanEndTurnEarly && Attempt.CurrentOffers.Count > 0)
+
+                if (enablePlayerActions && !Attempt.CanEndTurnEarly && Attempt.CurrentOffers.Count > 0)
                 {
                     State = AttemptLoopState.WaitingForPlayerInput;
                     WaitingForPlayerInput?.Invoke(Attempt);
@@ -101,7 +112,6 @@ namespace AI4GamesFinalProj.Gameplay
             if (Attempt.IsComplete || !Attempt.CanResolveMoreActions)
             {
                 FinalizeCurrentTurn();
-
                 return;
             }
 
@@ -115,7 +125,15 @@ namespace AI4GamesFinalProj.Gameplay
             {
                 State = AttemptLoopState.Completed;
                 AttemptEnded?.Invoke(Attempt);
-                
+                return;
+            }
+
+            if (!enablePlayerActions)
+            {
+                Attempt.EndActionPhase();
+                Attempt.SetCurrentOffers(Array.Empty<PlayerActionOffer>());
+                State = AttemptLoopState.WaitingForPlayerInput;
+                WaitingForPlayerInput?.Invoke(Attempt);
                 return;
             }
 
