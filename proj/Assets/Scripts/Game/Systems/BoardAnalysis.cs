@@ -43,14 +43,17 @@ namespace AI4GamesFinalProj.Gameplay
 
             int corruptedCount = board.AllCells.Count(cell => cell.IsCorrupted);
             int totalCells = board.AllCells.Count();
+
             int rootThreats = board.AllCells.Count(cell =>
                 cell.Archetype == CellArchetype.LifeRoot &&
                 board.GetNeighborCells(cell.Coords).Any(neighbor => neighbor.IsCorrupted));
+
             int springThreats = board.AllCells.Count(cell =>
                 cell.Archetype == CellArchetype.ManaSpring &&
                 board.GetNeighborCells(cell.Coords).Any(neighbor => neighbor.IsCorrupted));
 
             float corruptedRatio = totalCells == 0 ? 0f : (float)corruptedCount / totalCells;
+
             return Mathf.Clamp01(corruptedRatio * 0.5f + rootThreats * 0.3f + springThreats * 0.1f);
         }
 
@@ -73,6 +76,7 @@ namespace AI4GamesFinalProj.Gameplay
             int corruptedNeighbors = CountCorruptedNeighbors(board, cell);
             int rootThreat = CountAdjacentRoots(board, cell);
             int springThreat = CountAdjacentSprings(board, cell);
+            
             return rootThreat * 12f + springThreat * 6f + corruptedNeighbors * 3f + cell.CorruptedTurns * 2f;
         }
 

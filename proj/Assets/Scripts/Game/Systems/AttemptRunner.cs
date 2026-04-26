@@ -92,6 +92,7 @@ namespace AI4GamesFinalProj.Gameplay
                 }
 
                 FinalizeCurrentTurn();
+                
                 return;
             }
 
@@ -112,6 +113,7 @@ namespace AI4GamesFinalProj.Gameplay
             if (Attempt.IsComplete || !Attempt.CanResolveMoreActions)
             {
                 FinalizeCurrentTurn();
+
                 return;
             }
 
@@ -125,6 +127,7 @@ namespace AI4GamesFinalProj.Gameplay
             {
                 State = AttemptLoopState.Completed;
                 AttemptEnded?.Invoke(Attempt);
+
                 return;
             }
 
@@ -134,6 +137,7 @@ namespace AI4GamesFinalProj.Gameplay
                 Attempt.SetCurrentOffers(Array.Empty<PlayerActionOffer>());
                 State = AttemptLoopState.WaitingForPlayerInput;
                 WaitingForPlayerInput?.Invoke(Attempt);
+                
                 return;
             }
 

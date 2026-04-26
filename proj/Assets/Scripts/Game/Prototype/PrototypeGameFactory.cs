@@ -2,6 +2,8 @@ using UnityEngine;
 
 namespace AI4GamesFinalProj.Gameplay
 {
+    //These are not AI comments, just notes from sanity checks to make sure code is clean (at least somewhat)
+    //PrototypeGameFactory assembles the main objects needed for a game (Board, rules, player)
     public sealed class PrototypeGameFactory
     {
         private readonly int width;

@@ -9,6 +9,10 @@ namespace AI4GamesFinalProj.Gameplay
     {
         private readonly List<PlayerActionOffer> currentOffers = new List<PlayerActionOffer>();
 
+        public GameWorld World { get; }
+        public IGameBoard Board { get; }
+        public Player Player { get; }
+
         public Attempt(GameWorld world, IGameBoard board, Player player)
         {
             World = world ?? throw new ArgumentNullException(nameof(world));
@@ -16,11 +20,6 @@ namespace AI4GamesFinalProj.Gameplay
             Player = player ?? throw new ArgumentNullException(nameof(player));
         }
 
-        public GameWorld World { get; }
-
-        public IGameBoard Board { get; }
-
-        public Player Player { get; }
 
         public bool IsComplete => World.HasEnded || World.CurrentTick >= World.TotalTicks;
 

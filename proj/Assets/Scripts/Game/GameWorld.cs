@@ -3,6 +3,9 @@ using UnityEngine;
 
 namespace AI4GamesFinalProj.Gameplay
 {
+    //Keeps track of the game world's state
+    //GameBoard is also game state, but if the board was here, it would bloat the class
+    //makes sense to keep them separate
     public sealed class GameWorld
     {
         public GameWorld(

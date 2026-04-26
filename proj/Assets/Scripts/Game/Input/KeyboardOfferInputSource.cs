@@ -24,14 +24,14 @@ namespace AI4GamesFinalProj.Gameplay
                     PlayerInputKind.Keyboard,
                     null,
                     $"Offer{index + 1}");
+
                 return true;
             }
 
             if (WasEndTurnKeyPressed())
             {
-                request = PlayerActionRequest.CreateEndTurnRequest(
-                    PlayerInputKind.Keyboard,
-                    "EndTurn");
+                request = PlayerActionRequest.CreateEndTurnRequest(PlayerInputKind.Keyboard, "EndTurn");
+
                 return true;
             }
 

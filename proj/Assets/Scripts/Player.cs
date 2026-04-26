@@ -6,6 +6,7 @@ namespace AI4GamesFinalProj.Gameplay
 {
     public sealed class Player
     {
+        public string Name { get; }
         private readonly List<PlayerAction> actions = new List<PlayerAction>();
 
         public Player(string name)
@@ -18,7 +19,6 @@ namespace AI4GamesFinalProj.Gameplay
             Name = name;
         }
 
-        public string Name { get; }
 
         public IReadOnlyList<PlayerAction> Actions => actions;
 
