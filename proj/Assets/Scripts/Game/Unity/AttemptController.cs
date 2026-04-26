@@ -134,12 +134,10 @@ namespace AI4GamesFinalProj.Gameplay
             ClearAttempt();
 
             CurrentAttempt = new Attempt(world, board, player);
-            AttemptTurnProcessor turnProcessor = new AttemptTurnProcessor();
 
             attemptRunner = new AttemptRunner(
                 CurrentAttempt,
-                new UtilityAiTurnDriver(new CellularAutomataEngine(automataRules), turnProcessor),
-                turnProcessor,
+                new UtilityAiTurnDriver(new CellularAutomataEngine(automataRules)),
                 new UtilityAiActionSelector(),
                 enablePlayerActions);
 

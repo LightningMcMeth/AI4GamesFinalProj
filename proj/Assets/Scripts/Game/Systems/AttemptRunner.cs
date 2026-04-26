@@ -3,13 +3,13 @@ using System.Collections.Generic;
 
 namespace AI4GamesFinalProj.Gameplay
 {
+    //This is our main orchestrator
+    //
     public sealed class AttemptRunner
     {
         private readonly Queue<PlayerActionRequest> pendingRequests = new Queue<PlayerActionRequest>();
-        private readonly AttemptTurnProcessor turnProcessor;
         private readonly UtilityAiActionSelector actionSelector;
         private readonly UtilityAiTurnDriver turnDriver;
-
         private readonly bool enablePlayerActions;
 
         public Attempt Attempt { get; }
@@ -26,13 +26,11 @@ namespace AI4GamesFinalProj.Gameplay
         public AttemptRunner(
             Attempt attempt,
             UtilityAiTurnDriver turnDriver,
-            AttemptTurnProcessor turnProcessor,
             UtilityAiActionSelector actionSelector,
             bool enablePlayerActions = true)
         {
             Attempt = attempt ?? throw new ArgumentNullException(nameof(attempt));
             this.turnDriver = turnDriver ?? throw new ArgumentNullException(nameof(turnDriver));
-            this.turnProcessor = turnProcessor ?? throw new ArgumentNullException(nameof(turnProcessor));
             this.actionSelector = actionSelector ?? throw new ArgumentNullException(nameof(actionSelector));
             this.enablePlayerActions = enablePlayerActions;
             State = AttemptLoopState.NotStarted;
@@ -122,7 +120,7 @@ namespace AI4GamesFinalProj.Gameplay
 
         private void BeginTurn()
         {
-            turnProcessor.BeginTurn(Attempt);
+            ApplyBeginTurnState();
             if (Attempt.IsComplete)
             {
                 State = AttemptLoopState.Completed;
@@ -135,8 +133,7 @@ namespace AI4GamesFinalProj.Gameplay
             {
                 Attempt.EndActionPhase();
                 Attempt.SetCurrentOffers(Array.Empty<PlayerActionOffer>());
-                State = AttemptLoopState.WaitingForPlayerInput;
-                WaitingForPlayerInput?.Invoke(Attempt);
+                State = AttemptLoopState.ResolvingTurn;
                 
                 return;
             }
@@ -156,6 +153,10 @@ namespace AI4GamesFinalProj.Gameplay
         {
             Attempt.EndActionPhase();
             bool advanced = turnDriver.CompleteTurn(Attempt);
+            if (advanced)
+            {
+                ApplyEndTurnState();
+            }
 
             if (!advanced || Attempt.IsComplete)
             {
@@ -166,6 +167,35 @@ namespace AI4GamesFinalProj.Gameplay
             }
 
             BeginTurn();
+        }
+
+        private void ApplyBeginTurnState()
+        {
+            foreach (BoardCell cell in Attempt.Cells)
+            {
+                cell.AdvanceTurn();
+            }
+
+            SquareGameBoard board = Attempt.Board as SquareGameBoard;
+            Attempt.World.CollectResources(board);
+            Attempt.World.SetDangerLevel(BoardAnalysis.ComputeDangerLevel(Attempt));
+            Attempt.World.CheckLoseCondition();
+        }
+
+        private void ApplyEndTurnState()
+        {
+            Attempt.World.UpdateLifeRootsRemaining(BoardAnalysis.CountAliveRoots(Attempt));
+            Attempt.World.SetDangerLevel(BoardAnalysis.ComputeDangerLevel(Attempt));
+
+            if (Attempt.World.CheckLoseCondition())
+            {
+                return;
+            }
+
+            if (Attempt.World.CurrentTick >= Attempt.World.TotalTicks)
+            {
+                Attempt.World.Win("You survived the shrinking territory.");
+            }
         }
     }
 }

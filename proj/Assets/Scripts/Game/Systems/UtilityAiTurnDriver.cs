@@ -4,13 +4,11 @@ namespace AI4GamesFinalProj.Gameplay
 {
     public sealed class UtilityAiTurnDriver
     {
-        private readonly AttemptTurnProcessor turnProcessor;
         private readonly CellularAutomataEngine cellularAutomataEngine;
 
-        public UtilityAiTurnDriver(CellularAutomataEngine cellularAutomataEngine, AttemptTurnProcessor turnProcessor)
+        public UtilityAiTurnDriver(CellularAutomataEngine cellularAutomataEngine)
         {
             this.cellularAutomataEngine = cellularAutomataEngine ?? throw new ArgumentNullException(nameof(cellularAutomataEngine));
-            this.turnProcessor = turnProcessor ?? throw new ArgumentNullException(nameof(turnProcessor));
         }
 
         public bool TryResolvePlayerAction(Attempt attempt, PlayerActionRequest request, out PlayerAction resolvedAction)
@@ -57,8 +55,6 @@ namespace AI4GamesFinalProj.Gameplay
             }
 
             cellularAutomataEngine.Step(attempt);
-            turnProcessor.EndTurn(attempt);
-            
             return true;
         }
     }
