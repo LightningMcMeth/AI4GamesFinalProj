@@ -18,11 +18,18 @@ namespace AI4GamesFinalProj.Gameplay
         private CellType currentVisualType;
         private bool usingFallbackVisual;
 
+        private SpriteRenderer barrierIcon;
+        private SpriteRenderer frozenIcon;
+
         public Vector3 Coords { get; private set; }
 
         public void Initialize(BoardViewPrefabLibrary boardViewPrefabLibrary, BoardCell cell)
         {
             prefabLibrary = boardViewPrefabLibrary;
+
+            barrierIcon = CreateStatusIcon("BarrierIcon", prefabLibrary.BarrierIconSprite, Vector3.zero);
+            frozenIcon = CreateStatusIcon("FrozenIcon", prefabLibrary.FrozenIconSprite, Vector3.zero);
+
             Refresh(cell, true);
         }
 
@@ -39,6 +46,9 @@ namespace AI4GamesFinalProj.Gameplay
             transform.localPosition = prefabLibrary.GetCellWorldPosition(cell);
             transform.localRotation = prefabLibrary.GetCellRotation();
             transform.localScale = prefabLibrary.CellScale;
+
+            barrierIcon.enabled = cell.BarrierTurns > 0;
+            frozenIcon.enabled = cell.FrozenTurns > 0;
 
             if (forceVisualRebuild || currentVisual == null || currentVisualType != cell.Type)
             {
@@ -186,6 +196,25 @@ namespace AI4GamesFinalProj.Gameplay
             statusText.alignment = TextAlignment.Center;
             statusText.characterSize = 0.1f;
             statusText.fontSize = 32;
+        }
+
+        private SpriteRenderer CreateStatusIcon(string name, Sprite sprite, Vector3 localOffset)
+        {
+            GameObject iconObject = new GameObject(name);
+            iconObject.transform.SetParent(transform, false);
+
+            iconObject.transform.localPosition = new Vector3(0f, 0f, -0.2f);
+            iconObject.transform.localScale = Vector3.one;
+
+            SpriteRenderer renderer = iconObject.AddComponent<SpriteRenderer>();
+            renderer.sprite = sprite;
+
+            renderer.color = new Color(1f, 1f, 1f, 0.55f);
+
+            renderer.sortingOrder = 2;
+            renderer.enabled = false;
+
+            return renderer;
         }
 
         //#if UNITY_EDITOR

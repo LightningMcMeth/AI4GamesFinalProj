@@ -420,6 +420,8 @@ MonoBehaviour:
     LifeRootPrefab: {fileID: 5927295953822784230, guid: 2574126ffea1d384e901d7227c982ea9, type: 3}
     SacredCellPrefab: {fileID: 6358268677799968754, guid: e84b83a5cf0cd74409d1af0e54d42936, type: 3}
     DeadCellPrefab: {fileID: 7377895107724852626, guid: 34116a4cb9721d74a9db5af026305203, type: 3}
+    BarrierIconSprite: {fileID: 21300000, guid: 2a01f2a53dab5d545aaeb3d7f78b9286, type: 3}
+    FrozenIconSprite: {fileID: 21300000, guid: 7c0621abe141f3349913d4e8cd943814, type: 3}
 --- !u!114 &1514836728
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -432,13 +434,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 713590f5785947e2a3c73b5d151bc08c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AI4GamesFinalProj.Gameplay.GameplayHudView
-  attemptController: {fileID: 0}
+  attemptController: {fileID: 1514836727}
   hudRect:
     serializedVersion: 2
     x: 16
     y: 16
-    width: 230
-    height: 450
+    width: 340
+    height: 600
   headerTitle: Wizard Territory
   showKeyboardHints: 1
 --- !u!114 &1514836729

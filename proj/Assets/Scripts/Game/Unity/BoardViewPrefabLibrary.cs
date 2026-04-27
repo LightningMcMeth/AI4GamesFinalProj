@@ -24,6 +24,9 @@ namespace AI4GamesFinalProj.Gameplay
         public GameObject SacredCellPrefab;
         public GameObject DeadCellPrefab;
 
+        public Sprite BarrierIconSprite;
+        public Sprite FrozenIconSprite;
+
         public Transform GetSpawnParent()
         {
             return CellParent != null ? CellParent : GeometryParent;
