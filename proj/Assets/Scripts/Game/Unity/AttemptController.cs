@@ -337,7 +337,7 @@ namespace AI4GamesFinalProj.Gameplay
             PreviewActionChanged?.Invoke(attempt, actionId);
         }
 
-        private void StartPrototypeAttempt()
+        public void StartPrototypeAttempt()
         {
             if (useRandomSeed)
             {
