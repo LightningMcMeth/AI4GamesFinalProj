@@ -109,6 +109,7 @@ namespace AI4GamesFinalProj.Gameplay
         {
             GUILayout.Space(6f);
             GUILayout.Label("Offers");
+            string selectedActionId = attemptController.SelectedPreviewActionId;
 
             if (currentOffers == null || currentOffers.Count == 0)
             {
@@ -119,10 +120,11 @@ namespace AI4GamesFinalProj.Gameplay
                 for (int index = 0; index < currentOffers.Count; index++)
                 {
                     PlayerActionOffer offer = currentOffers[index];
-                    string label = $"{index + 1}. {offer.Action.DisplayName} [{offer.UtilityScore:F1}]";
+                    bool isSelected = string.Equals(selectedActionId, offer.Action.Id, StringComparison.OrdinalIgnoreCase);
+                    string label = $"{(isSelected ? "> " : string.Empty)}{index + 1}. {offer.Action.DisplayName} [{offer.UtilityScore:F1}]";
                     if (GUILayout.Button(label))
                     {
-                        attemptController.SubmitOfferedAction(index);
+                        attemptController.TrySelectOfferedPreview(index);
                     }
 
                     GUILayout.Label(offer.Action.Description);
@@ -150,6 +152,11 @@ namespace AI4GamesFinalProj.Gameplay
             if (!string.IsNullOrWhiteSpace(lastActionText))
             {
                 GUILayout.Label(lastActionText, GUI.skin.box);
+            }
+
+            if (attemptController.HasSelectedPreviewAction)
+            {
+                GUILayout.Label($"Selected Spell: {attemptController.SelectedPreviewActionId}. Click a board cell to cast.", GUI.skin.box);
             }
 
             if (attempt.World.HasEnded)

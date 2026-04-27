@@ -32,15 +32,15 @@ namespace AI4GamesFinalProj.Gameplay
 
         [SerializeField]
         [Min(0)]
-        private int startingMana = 0;
+        private int startingMana = 6;
 
         [SerializeField]
         [Min(1)]
-        private int startingVitality = 0;
+        private int startingVitality = 5;
 
         [SerializeField]
         [Min(1)]
-        private int maxPlayerActionsPerTurn = 0;
+        private int maxPlayerActionsPerTurn = 2;
 
         [SerializeField]
         [Min(0)]
@@ -48,13 +48,13 @@ namespace AI4GamesFinalProj.Gameplay
 
         [SerializeField]
         [Min(0)]
-        private int startingEssence = 0;
+        private int startingEssence = 1;
 
         [SerializeField]
         private bool enableKeyboardDebugInput = true;
 
         [SerializeField]
-        private bool enablePlayerActions = false;
+        private bool enablePlayerActions = true;
 
         [SerializeField]
         private bool logTurnFlow = true;
@@ -73,15 +73,22 @@ namespace AI4GamesFinalProj.Gameplay
             attemptRunner != null &&
             attemptRunner.State != AttemptLoopState.Completed;
 
+        public bool IsWaitingForPlayerInput => attemptRunner != null && attemptRunner.IsWaitingForPlayerInput;
+
         public BoardViewPrefabLibrary BoardPrefabs => boardPrefabs;
 
         public IReadOnlyList<PlayerActionOffer> CurrentOffers => CurrentAttempt?.CurrentOffers ?? Array.Empty<PlayerActionOffer>();
+
+        public string SelectedPreviewActionId => attemptRunner?.SelectedPreviewActionId ?? string.Empty;
+
+        public bool HasSelectedPreviewAction => !string.IsNullOrWhiteSpace(SelectedPreviewActionId);
 
         public event Action<Attempt> AttemptStarted;
         public event Action<Attempt, IReadOnlyList<PlayerActionOffer>> OffersUpdated;
         public event Action<Attempt> AwaitingPlayerInput;
         public event Action<Attempt, PlayerAction> TurnResolved;
         public event Action<Attempt> AttemptEnded;
+        public event Action<Attempt, string> PreviewActionChanged;
 
         private void Start()
         {
@@ -145,6 +152,7 @@ namespace AI4GamesFinalProj.Gameplay
             attemptRunner.WaitingForPlayerInput += HandleWaitingForPlayerInput;
             attemptRunner.TurnResolved += HandleTurnResolved;
             attemptRunner.AttemptEnded += HandleAttemptEnded;
+            attemptRunner.PreviewActionChanged += HandlePreviewActionChanged;
 
             attemptRunner.Start();
         }
@@ -178,6 +186,31 @@ namespace AI4GamesFinalProj.Gameplay
 
             attemptRunner.EnqueueInput(PlayerActionRequest.CreateEndTurnRequest(inputKind, inputBindingId));
             return true;
+        }
+
+        public bool TrySelectPreviewAction(string actionId)
+        {
+            return attemptRunner != null && attemptRunner.TrySelectPreviewAction(actionId);
+        }
+
+        public bool TrySelectOfferedPreview(int offerIndex)
+        {
+            if (CurrentAttempt == null || offerIndex < 0 || offerIndex >= CurrentAttempt.CurrentOffers.Count)
+            {
+                return false;
+            }
+
+            return TrySelectPreviewAction(CurrentAttempt.CurrentOffers[offerIndex].Action.Id);
+        }
+
+        public void ClearPreviewAction()
+        {
+            attemptRunner?.ClearSelectedPreviewAction();
+        }
+
+        public bool TrySubmitSelectedPreviewToBoard(Vector3 targetCoords)
+        {
+            return attemptRunner != null && attemptRunner.TrySubmitSelectedPreviewToBoard(targetCoords);
         }
 
         public bool SubmitPlayerAction(
@@ -223,6 +256,7 @@ namespace AI4GamesFinalProj.Gameplay
                 attemptRunner.WaitingForPlayerInput -= HandleWaitingForPlayerInput;
                 attemptRunner.TurnResolved -= HandleTurnResolved;
                 attemptRunner.AttemptEnded -= HandleAttemptEnded;
+                attemptRunner.PreviewActionChanged -= HandlePreviewActionChanged;
             }
 
             CurrentAttempt = null;
@@ -279,6 +313,11 @@ namespace AI4GamesFinalProj.Gameplay
             {
                 Debug.Log($"Attempt ended: {attempt.World.Outcome} - {attempt.World.OutcomeReason}");
             }
+        }
+
+        private void HandlePreviewActionChanged(Attempt attempt, string actionId)
+        {
+            PreviewActionChanged?.Invoke(attempt, actionId);
         }
 
         private void StartPrototypeAttempt()

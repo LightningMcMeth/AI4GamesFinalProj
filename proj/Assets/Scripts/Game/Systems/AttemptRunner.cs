@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
 
 namespace AI4GamesFinalProj.Gameplay
 {
@@ -11,6 +13,7 @@ namespace AI4GamesFinalProj.Gameplay
         private readonly UtilityAiActionSelector actionSelector;
         private readonly UtilityAiTurnDriver turnDriver;
         private readonly bool enablePlayerActions;
+        private string selectedPreviewActionId = string.Empty;
 
         public Attempt Attempt { get; }
 
@@ -18,10 +21,15 @@ namespace AI4GamesFinalProj.Gameplay
 
         public bool IsWaitingForPlayerInput => State == AttemptLoopState.WaitingForPlayerInput;
 
+        public string SelectedPreviewActionId => selectedPreviewActionId;
+
+        public bool HasSelectedPreviewAction => !string.IsNullOrWhiteSpace(selectedPreviewActionId);
+
         public event Action<Attempt> AttemptStarted;
         public event Action<Attempt> WaitingForPlayerInput;
         public event Action<Attempt, PlayerActionRequest, PlayerAction> TurnResolved;
         public event Action<Attempt> AttemptEnded;
+        public event Action<Attempt, string> PreviewActionChanged;
 
         public AttemptRunner(
             Attempt attempt,
@@ -62,6 +70,59 @@ namespace AI4GamesFinalProj.Gameplay
             pendingRequests.Enqueue(request);
         }
 
+        public bool TrySelectPreviewAction(string actionId)
+        {
+            if (!enablePlayerActions || State != AttemptLoopState.WaitingForPlayerInput || string.IsNullOrWhiteSpace(actionId))
+            {
+                return false;
+            }
+
+            bool isOffered = Attempt.CurrentOffers.Any(offer =>
+                string.Equals(offer.Action.Id, actionId, StringComparison.OrdinalIgnoreCase));
+            if (!isOffered)
+            {
+                return false;
+            }
+
+            if (string.Equals(selectedPreviewActionId, actionId, StringComparison.OrdinalIgnoreCase))
+            {
+                ClearSelectedPreviewAction();
+                return true;
+            }
+
+            selectedPreviewActionId = actionId;
+            PreviewActionChanged?.Invoke(Attempt, selectedPreviewActionId);
+            return true;
+        }
+
+        public void ClearSelectedPreviewAction()
+        {
+            if (string.IsNullOrWhiteSpace(selectedPreviewActionId))
+            {
+                return;
+            }
+
+            selectedPreviewActionId = string.Empty;
+            PreviewActionChanged?.Invoke(Attempt, selectedPreviewActionId);
+        }
+
+        public bool TrySubmitSelectedPreviewToBoard(Vector3 targetCoords)
+        {
+            if (!enablePlayerActions || State != AttemptLoopState.WaitingForPlayerInput || !HasSelectedPreviewAction)
+            {
+                return false;
+            }
+
+            pendingRequests.Enqueue(new PlayerActionRequest(
+                selectedPreviewActionId,
+                PlayerInputKind.Mouse,
+                targetCoords,
+                "BoardUi"));
+
+            ClearSelectedPreviewAction();
+            return true;
+        }
+
         public void Update()
         {
             if (State == AttemptLoopState.ResolvingTurn && !enablePlayerActions)
@@ -77,6 +138,7 @@ namespace AI4GamesFinalProj.Gameplay
 
             PlayerActionRequest request = pendingRequests.Dequeue();
             State = AttemptLoopState.ResolvingTurn;
+            ClearSelectedPreviewAction();
 
             if (request.IsEndTurnRequest)
             {
@@ -144,6 +206,7 @@ namespace AI4GamesFinalProj.Gameplay
 
         private void RefreshOffers()
         {
+            ClearSelectedPreviewAction();
             Attempt.SetCurrentOffers(actionSelector.BuildTopOffers(Attempt));
             State = AttemptLoopState.WaitingForPlayerInput;
             WaitingForPlayerInput?.Invoke(Attempt);

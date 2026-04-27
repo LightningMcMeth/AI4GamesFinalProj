@@ -352,6 +352,7 @@ GameObject:
   - component: {fileID: 1514836727}
   - component: {fileID: 1514836729}
   - component: {fileID: 1514836728}
+  - component: {fileID: 1514836730}
   m_Layer: 0
   m_Name: AttemptController
   m_TagString: Untagged
@@ -390,7 +391,7 @@ MonoBehaviour:
   totalTicks: 30
   boardWidth: 12
   boardHeight: 12
-  boardSeed: 13123
+  boardSeed: 1
   playerName: Wizard
   startingMana: 3
   startingVitality: 2
@@ -398,7 +399,7 @@ MonoBehaviour:
   vitalityUpkeepPerTurn: 1
   startingEssence: 4
   enableKeyboardDebugInput: 1
-  enablePlayerActions: 0
+  enablePlayerActions: 1
   logTurnFlow: 1
   boardPrefabs:
     CellParent: {fileID: 0}
@@ -453,7 +454,27 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AI4GamesFinalProj.Gameplay.BoardView
   attemptController: {fileID: 1514836727}
   rebuildBoardOnAttemptStart: 1
-  clearBoardWhenAttemptEnds: 0
+  clearBoardWhenAttemptEnds: 1
+--- !u!114 &1514836730
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1514836725}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d8926690130644d89c4c9a5e9164c691, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AI4GamesFinalProj.Gameplay.BoardUiView
+  attemptController: {fileID: 0}
+  targetCamera: {fileID: 0}
+  overlayParent: {fileID: 0}
+  overlayDepthOffset: -0.15
+  overlayScaleMultiplier: 0.92
+  sortingOrder: 50
+  hoverColor: {r: 0.2, g: 0.55, b: 1, a: 0.45}
+  invalidTargetColor: {r: 1, g: 0, b: 0.38012314, a: 0.5}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
