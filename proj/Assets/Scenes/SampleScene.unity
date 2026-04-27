@@ -391,6 +391,7 @@ MonoBehaviour:
   totalTicks: 30
   boardWidth: 12
   boardHeight: 12
+  useRandomSeed: 1
   boardSeed: 1
   playerName: Wizard
   startingMana: 3
@@ -410,7 +411,7 @@ MonoBehaviour:
     CellDepth: 0
     CellScale: {x: 1, y: 1, z: 1}
     CellRotationEuler: {x: 0, y: 0, z: 0}
-    ShowCellStatusText: 1
+    ShowCellStatusText: 0
     StatusTextOffset: {x: 0, y: -0.35, z: 0}
     StatusTextScale: {x: 0.2, y: 0.2, z: 0.2}
     HealthyLandPrefab: {fileID: 5813866646800936787, guid: b24473156c61bda47997a345b33140f2, type: 3}
