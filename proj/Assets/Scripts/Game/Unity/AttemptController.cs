@@ -25,6 +25,9 @@ namespace AI4GamesFinalProj.Gameplay
         private int boardHeight = 8;
 
         [SerializeField]
+        private bool useRandomSeed = true;
+
+        [SerializeField]
         private int boardSeed = 7;
 
         [SerializeField]
@@ -336,6 +339,11 @@ namespace AI4GamesFinalProj.Gameplay
 
         private void StartPrototypeAttempt()
         {
+            if (useRandomSeed)
+            {
+                boardSeed = UnityEngine.Random.Range(int.MinValue, int.MaxValue);
+            }
+
             PrototypeGameFactory factory = new PrototypeGameFactory(boardWidth, boardHeight, boardSeed);
 
             GameWorld world = new GameWorld(
