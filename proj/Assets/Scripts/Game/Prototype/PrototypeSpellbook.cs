@@ -220,7 +220,7 @@ namespace AI4GamesFinalProj.Gameplay
 
                     return context.World.Mana >= 6 &&
                         context.World.Essence >= 2 &&
-                        context.World.DangerLevel >= 0.45f &&
+                        context.World.DangerLevel >= 0.35f &&
                         target != null &&
                         ScorePurifyAreaTarget(context.Attempt, target) >= 10f;
                 },
