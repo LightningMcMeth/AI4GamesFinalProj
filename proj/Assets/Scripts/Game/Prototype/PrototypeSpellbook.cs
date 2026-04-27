@@ -39,7 +39,9 @@ namespace AI4GamesFinalProj.Gameplay
                         return 0f;
                     }
 
-                    return 30f + BoardAnalysis.ScoreCleanseTarget(context.SquareBoard, target);
+                    float dangerBonus = context.World.DangerLevel * 15f;
+
+                    return 18f + dangerBonus + BoardAnalysis.ScoreCleanseTarget(context.SquareBoard, target);
                 },
                 canExecute: context =>
                     context.World.Mana >= 3 &&
@@ -113,7 +115,10 @@ namespace AI4GamesFinalProj.Gameplay
                         return 0f;
                     }
 
-                    return 18f +
+                    float preventionBonus = context.World.DangerLevel < 0.5f ? 10f : 2f;
+
+                    return 14f +
+                        preventionBonus +
                         BoardAnalysis.CountCorruptedNeighbors(context.SquareBoard, target) * 4f +
                         BoardAnalysis.CountAdjacentRoots(context.SquareBoard, target) * 5f;
                 },
@@ -128,7 +133,7 @@ namespace AI4GamesFinalProj.Gameplay
                     }
 
                     BoardCell target = ResolveFortifyTarget(context);
-                    target?.AddBarrier(2);
+                    target?.AddBarrier(6);
                 });
         }
 
@@ -153,6 +158,7 @@ namespace AI4GamesFinalProj.Gameplay
                 },
                 canExecute: context =>
                     context.World.Mana >= 4 &&
+                    context.World.DangerLevel <= 0.55f &&
                     ResolveManaBloomTarget(context) != null,
                 execute: context =>
                 {
@@ -189,14 +195,20 @@ namespace AI4GamesFinalProj.Gameplay
                         return 0f;
                     }
 
-                    return 12f + ScorePurifyAreaTarget(context.Attempt, target);
+                    float areaScore = ScorePurifyAreaTarget(context.Attempt, target);
+                    float dangerBonus = context.World.DangerLevel * 20f;
+                    float resourcePenalty = context.World.Mana <= 8 ? 8f : 0f;
+
+                    return 8f + areaScore + dangerBonus - resourcePenalty;
                 },
                 canExecute: context =>
                 {
                     BoardCell target = ResolvePurifyAreaTarget(context);
+
                     return context.World.Mana >= 6 &&
+                        context.World.DangerLevel >= 0.45f &&
                         target != null &&
-                        ScorePurifyAreaTarget(context.Attempt, target) >= 8f;
+                        ScorePurifyAreaTarget(context.Attempt, target) >= 10f;
                 },
                 execute: context =>
                 {

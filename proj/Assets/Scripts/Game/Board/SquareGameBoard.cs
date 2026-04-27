@@ -204,6 +204,11 @@ namespace AI4GamesFinalProj.Gameplay
 
                 if (rules.DiesFromCorruptedNeighbor && corruptedNeighbors > 0)
                 {
+                    if (cell.BarrierTurns > 0 || cell.PurifiedTurns > 0)
+                    {
+                        continue;
+                    }
+
                     cell.SetNextType(CellType.DeadCell);
                     continue;
                 }
@@ -228,9 +233,14 @@ namespace AI4GamesFinalProj.Gameplay
                     continue;
                 }
 
-                int temporaryBonus = (cell.ShieldTurns > 0 ? 1 : 0) + (cell.PurifiedTurns > 0 ? 2 : 0);
+                if (cell.BarrierTurns > 0 || cell.PurifiedTurns > 0)
+                {
+                    continue;
+                }
+
                 int sacredSupportBonus = cell.Type == CellType.HealthyLand && sacredNeighbors >= 2 ? 1 : 0;
-                int threshold = rules.BaseThreshold + rules.ResistanceBonus + temporaryBonus + sacredSupportBonus;
+                int threshold = rules.BaseThreshold + rules.ResistanceBonus + sacredSupportBonus;
+
                 if (corruptedNeighbors >= threshold)
                 {
                     cell.SetNextType(CellType.CorruptedLand);

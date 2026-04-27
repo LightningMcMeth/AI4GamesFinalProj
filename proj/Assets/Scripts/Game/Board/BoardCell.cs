@@ -240,6 +240,11 @@ namespace AI4GamesFinalProj.Gameplay
 
         private void ApplyResolvedType(CellType resolvedType)
         {
+            if (resolvedType == CellType && resolvedType != CellType.CorruptedLand)
+            {
+                return;
+            }
+
             switch (resolvedType)
             {
                 case CellType.CorruptedLand:
