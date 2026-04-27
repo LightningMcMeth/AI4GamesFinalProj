@@ -14,7 +14,10 @@ namespace AI4GamesFinalProj.Gameplay
             int startingVitality,
             int startingEssence,
             int maxPlayerActionsPerTurn = 2,
-            int vitalityUpkeepPerTurn = 1)
+            int vitalityUpkeepPerTurn = 1,
+            int maxMana = 15,
+            int maxVitality = 10,
+            int maxEssence = 10)
         {
             if (totalTicks <= 0)
             {
@@ -42,6 +45,9 @@ namespace AI4GamesFinalProj.Gameplay
             Essence = Math.Max(0, startingEssence);
             MaxPlayerActionsPerTurn = maxPlayerActionsPerTurn;
             VitalityUpkeepPerTurn = vitalityUpkeepPerTurn;
+            MaxMana = maxMana;
+            MaxVitality = maxVitality;
+            MaxEssence = maxEssence;
         }
 
         public int CurrentTick { get; private set; }
@@ -53,6 +59,12 @@ namespace AI4GamesFinalProj.Gameplay
         public int MaxPlayerActionsPerTurn { get; }
 
         public int VitalityUpkeepPerTurn { get; }
+
+        public int MaxMana { get; }
+
+        public int MaxVitality { get; }
+
+        public int MaxEssence { get; }
 
         public int Mana { get; private set; }
 
@@ -140,9 +152,9 @@ namespace AI4GamesFinalProj.Gameplay
             VitalityIncomeLastTurn = vitalityIncome;
             EssenceIncomeLastTurn = essenceIncome;
 
-            Mana = Math.Max(0, Mana + manaIncome);
-            Vitality = Math.Max(0, Vitality + vitalityIncome);
-            Essence = Math.Max(0, Essence + essenceIncome);
+            Mana = Mathf.Clamp(Mana + manaIncome, 0, MaxMana);
+            Vitality = Mathf.Clamp(Vitality + vitalityIncome, 0, MaxVitality);
+            Essence = Mathf.Clamp(Essence + essenceIncome, 0, MaxEssence); ;
         }
 
         public void CollectResources(SquareGameBoard board)

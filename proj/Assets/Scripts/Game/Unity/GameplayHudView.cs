@@ -96,9 +96,9 @@ namespace AI4GamesFinalProj.Gameplay
             GameWorld world = attempt.World;
             StringBuilder builder = new StringBuilder();
             builder.AppendLine($"Turn: {world.TurnNumber}/{world.TotalTicks}");
-            builder.AppendLine($"Mana: {world.Mana} (+{world.ManaIncomeLastTurn})");
-            builder.AppendLine($"Vitality: {world.Vitality} (+{world.VitalityIncomeLastTurn})");
-            builder.AppendLine($"Essence: {world.Essence} (+{world.EssenceIncomeLastTurn})");
+            builder.AppendLine($"Mana: {world.Mana} / {world.MaxMana} (+{world.ManaIncomeLastTurn})");
+            builder.AppendLine($"Vitality: {world.Vitality} / {world.MaxVitality} (+{world.VitalityIncomeLastTurn})");
+            builder.AppendLine($"Essence: {world.Essence} / {world.MaxEssence} (+{world.EssenceIncomeLastTurn})");
             builder.AppendLine($"Life Roots: {world.LifeRootsRemaining}");
             builder.AppendLine($"Danger: {world.DangerLevel:F2}");
             builder.AppendLine($"Actions: {attempt.ActionsResolvedThisTurn}/{world.MaxPlayerActionsPerTurn}");
@@ -121,7 +121,8 @@ namespace AI4GamesFinalProj.Gameplay
                 {
                     PlayerActionOffer offer = currentOffers[index];
                     bool isSelected = string.Equals(selectedActionId, offer.Action.Id, StringComparison.OrdinalIgnoreCase);
-                    string label = $"{(isSelected ? "> " : string.Empty)}{index + 1}. {offer.Action.DisplayName}";
+                    string costText = FormatActionCost(offer.Action);
+                    string label = $"{(isSelected ? "> " : string.Empty)}{index + 1}. {offer.Action.DisplayName} {costText}";
                     if (GUILayout.Button(label))
                     {
                         attemptController.TrySelectOfferedPreview(index);
@@ -193,6 +194,33 @@ namespace AI4GamesFinalProj.Gameplay
         private void HandleAttemptEnded(Attempt attempt)
         {
             finalOutcomeText = $"{attempt.World.Outcome}: {attempt.World.OutcomeReason}";
+        }
+
+        private static string FormatActionCost(PlayerAction action)
+        {
+            if (action == null)
+            {
+                return string.Empty;
+            }
+
+            List<string> costs = new List<string>();
+
+            if (action.ManaCost > 0)
+            {
+                costs.Add($"{action.ManaCost} mana");
+            }
+
+            if (action.EssenceCost > 0)
+            {
+                costs.Add($"{action.EssenceCost} essence");
+            }
+
+            if (costs.Count == 0)
+            {
+                return "(free)";
+            }
+
+            return $"({string.Join(", ", costs)})";
         }
     }
 }
