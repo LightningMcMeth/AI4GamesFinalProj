@@ -467,8 +467,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d8926690130644d89c4c9a5e9164c691, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AI4GamesFinalProj.Gameplay.BoardUiView
-  attemptController: {fileID: 0}
-  targetCamera: {fileID: 0}
+  attemptController: {fileID: 1514836727}
+  targetCamera: {fileID: 519420031}
   overlayParent: {fileID: 0}
   overlayDepthOffset: -0.15
   overlayScaleMultiplier: 0.92

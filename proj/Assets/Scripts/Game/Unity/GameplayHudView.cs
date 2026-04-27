@@ -121,7 +121,7 @@ namespace AI4GamesFinalProj.Gameplay
                 {
                     PlayerActionOffer offer = currentOffers[index];
                     bool isSelected = string.Equals(selectedActionId, offer.Action.Id, StringComparison.OrdinalIgnoreCase);
-                    string label = $"{(isSelected ? "> " : string.Empty)}{index + 1}. {offer.Action.DisplayName} [{offer.UtilityScore:F1}]";
+                    string label = $"{(isSelected ? "> " : string.Empty)}{index + 1}. {offer.Action.DisplayName}";
                     if (GUILayout.Button(label))
                     {
                         attemptController.TrySelectOfferedPreview(index);
@@ -146,7 +146,7 @@ namespace AI4GamesFinalProj.Gameplay
 
             if (showKeyboardHints)
             {
-                GUILayout.Label("Keys: 1/2/3 cast offers, 0/Enter/Space end turn.");
+                GUILayout.Label("Keys: 1/2/3 select offers, click a cell to cast, 0/Enter/Space end turn.");
             }
 
             if (!string.IsNullOrWhiteSpace(lastActionText))

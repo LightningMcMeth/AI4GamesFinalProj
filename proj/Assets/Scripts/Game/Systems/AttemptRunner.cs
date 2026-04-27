@@ -6,7 +6,7 @@ using UnityEngine;
 namespace AI4GamesFinalProj.Gameplay
 {
     //This is our main orchestrator
-    //
+    //that's it lol
     public sealed class AttemptRunner
     {
         private readonly Queue<PlayerActionRequest> pendingRequests = new Queue<PlayerActionRequest>();
@@ -161,6 +161,13 @@ namespace AI4GamesFinalProj.Gameplay
             {
                 Attempt.RegisterResolvedAction(action);
                 TurnResolved?.Invoke(Attempt, request, action);
+
+                if (TryResolveVirusClearWin())
+                {
+                    State = AttemptLoopState.Completed;
+                    AttemptEnded?.Invoke(Attempt);
+                    return;
+                }
             }
             else
             {
@@ -255,10 +262,32 @@ namespace AI4GamesFinalProj.Gameplay
                 return;
             }
 
+            TryResolveVirusClearWin();
+            if (Attempt.World.HasWon)
+            {
+                return;
+            }
+
             if (Attempt.World.CurrentTick >= Attempt.World.TotalTicks)
             {
                 Attempt.World.Win("You survived the shrinking territory.");
             }
+        }
+
+        private bool TryResolveVirusClearWin()
+        {
+            if (Attempt.World.HasEnded)
+            {
+                return Attempt.World.HasWon;
+            }
+
+            if (Attempt.Cells.Any(cell => cell.IsCorrupted))
+            {
+                return false;
+            }
+
+            Attempt.World.Win("All virus cells have been cleared.");
+            return true;
         }
     }
 }

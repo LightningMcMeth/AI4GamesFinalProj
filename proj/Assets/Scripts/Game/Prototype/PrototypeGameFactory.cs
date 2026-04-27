@@ -1,3 +1,4 @@
+using System.Linq;
 using UnityEngine;
 
 namespace AI4GamesFinalProj.Gameplay
@@ -20,6 +21,7 @@ namespace AI4GamesFinalProj.Gameplay
         public SquareGameBoard CreateBoard()
         {
             SquareGameBoard board = new SquareGameBoard(width, height, seed);
+            System.Random random = seed == 0 ? new System.Random() : new System.Random(seed * 17 + 11);
 
             Vector3 center = new Vector3(width / 2, height / 2, 0f);
             board.SetArchetype(center, CellArchetype.LifeRoot);
@@ -33,9 +35,7 @@ namespace AI4GamesFinalProj.Gameplay
             board.SetArchetype(new Vector3(1f, height - 2, 0f), CellArchetype.ManaSpring);
             board.SetArchetype(new Vector3(width - 2, height - 2, 0f), CellArchetype.ManaSpring);
 
-            board.GetBoardCell(new Vector3(width - 3, height - 3, 0f))?.MarkCorrupted();
-            board.GetBoardCell(new Vector3(width - 4, height - 3, 0f))?.MarkCorrupted();
-            board.GetBoardCell(new Vector3(width - 3, height - 4, 0f))?.MarkCorrupted();
+            SpawnInitialCorruption(board, random);
 
             return board;
         }
@@ -48,6 +48,72 @@ namespace AI4GamesFinalProj.Gameplay
         public ICellularAutomataRules CreateAutomataRules()
         {
             return new ShrinkingTerritoryAutomataRules(seed);
+        }
+
+        private void SpawnInitialCorruption(SquareGameBoard board, System.Random random)
+        {
+            System.Collections.Generic.List<BoardCell> manaSprings = board.AllCells
+                .Where(cell => cell.Archetype == CellArchetype.ManaSpring)
+                .ToList();
+
+            System.Collections.Generic.List<BoardCell> spawnCandidates = board.AllCells
+                .Where(cell => IsInOuterTwoRings(board, cell) && IsValidVirusSpawnCell(cell, manaSprings))
+                .ToList();
+
+            if (spawnCandidates.Count == 0)
+            {
+                return;
+            }
+
+            BoardCell origin = spawnCandidates[random.Next(spawnCandidates.Count)];
+            origin.MarkCorrupted();
+
+            Vector3 boardCenter = new Vector3((board.Width - 1) * 0.5f, (board.Height - 1) * 0.5f, 0f);
+            System.Collections.Generic.List<BoardCell> preferredNeighbors = board.GetNeighbors(origin)
+                .Where(cell => cell != null && IsValidVirusSpawnCell(cell, manaSprings))
+                .OrderBy(cell => Vector3.SqrMagnitude(cell.Coords - boardCenter))
+                .Take(2)
+                .ToList();
+
+            foreach (BoardCell cell in preferredNeighbors)
+            {
+                cell.MarkCorrupted();
+            }
+        }
+
+        private static bool IsInOuterTwoRings(SquareGameBoard board, BoardCell cell)
+        {
+            return cell.X <= 1 ||
+                cell.Y <= 1 ||
+                cell.X >= board.Width - 2 ||
+                cell.Y >= board.Height - 2;
+        }
+
+        private static bool IsValidVirusSpawnCell(
+            BoardCell cell,
+            System.Collections.Generic.IReadOnlyList<BoardCell> manaSprings)
+        {
+            if (cell == null ||
+                cell.Archetype == CellArchetype.ManaSpring ||
+                cell.Archetype == CellArchetype.LifeRoot ||
+                cell.Archetype == CellArchetype.SacredSite ||
+                cell.IsDead)
+            {
+                return false;
+            }
+
+            foreach (BoardCell manaSpring in manaSprings)
+            {
+                int dx = Mathf.Abs(cell.X - manaSpring.X);
+                int dy = Mathf.Abs(cell.Y - manaSpring.Y);
+
+                if (Mathf.Max(dx, dy) <= 1)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
     }
 }

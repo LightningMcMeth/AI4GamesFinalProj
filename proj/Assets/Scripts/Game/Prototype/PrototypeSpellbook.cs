@@ -1,9 +1,15 @@
+using System;
+using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
 namespace AI4GamesFinalProj.Gameplay
 {
     public static class PrototypeSpellbook
     {
+        private const int PurifyAreaBaseCellCount = 7;
+        private const int PurifyAreaGrowthCycleTurns = 5;
+
         public static Player CreatePlayer(string playerName)
         {
             Player player = new Player(playerName);
@@ -183,14 +189,14 @@ namespace AI4GamesFinalProj.Gameplay
                         return 0f;
                     }
 
-                    return 12f + BoardAnalysis.ScorePurifyAreaTarget(context.SquareBoard, target);
+                    return 12f + ScorePurifyAreaTarget(context.Attempt, target);
                 },
                 canExecute: context =>
                 {
                     BoardCell target = ResolvePurifyAreaTarget(context);
                     return context.World.Mana >= 6 &&
                         target != null &&
-                        BoardAnalysis.ScorePurifyAreaTarget(context.SquareBoard, target) >= 8f;
+                        ScorePurifyAreaTarget(context.Attempt, target) >= 8f;
                 },
                 execute: context =>
                 {
@@ -205,7 +211,7 @@ namespace AI4GamesFinalProj.Gameplay
                         return;
                     }
 
-                    foreach (BoardCell cell in context.SquareBoard.GetCellsInRadius(target.Coords, 1))
+                    foreach (BoardCell cell in GetPurifyAreaCells(context.Attempt, target.Coords))
                     {
                         cell.Purify();
                         cell.AddPurifiedShield(1);
@@ -285,82 +291,244 @@ namespace AI4GamesFinalProj.Gameplay
 
         private static BoardCell ResolveCleanseTarget(PlayerActionContext context)
         {
-            if (TryResolveExplicitTarget(context, out BoardCell cell) && cell.IsCorrupted)
-            {
-                return cell;
-            }
-
-            return BoardAnalysis.FindBestCleanseTarget(context.Attempt);
+            return ResolveTarget(
+                context,
+                cell => cell.IsCorrupted,
+                static attempt => BoardAnalysis.FindBestCleanseTarget(attempt));
         }
 
         private static BoardCell ResolveFortifyTarget(PlayerActionContext context)
         {
-            if (TryResolveExplicitTarget(context, out BoardCell cell) && cell.IsStable && !cell.IsDead)
-            {
-                return cell;
-            }
-
-            return BoardAnalysis.FindBestFortifyTarget(context.Attempt);
+            return ResolveTarget(
+                context,
+                cell => cell.IsStable && !cell.IsDead,
+                static attempt => BoardAnalysis.FindBestFortifyTarget(attempt));
         }
 
         private static BoardCell ResolveManaBloomTarget(PlayerActionContext context)
         {
-            if (TryResolveExplicitTarget(context, out BoardCell cell) &&
-                cell.IsStable &&
-                cell.Archetype == CellArchetype.HealthyLand)
-            {
-                return cell;
-            }
-
-            return BoardAnalysis.FindBestManaBloomTarget(context.Attempt);
+            return ResolveTarget(
+                context,
+                cell => cell.IsStable && cell.Archetype == CellArchetype.HealthyLand,
+                static attempt => BoardAnalysis.FindBestManaBloomTarget(attempt));
         }
 
         private static BoardCell ResolvePurifyAreaTarget(PlayerActionContext context)
         {
-            if (TryResolveExplicitTarget(context, out BoardCell cell) && !cell.IsDead)
-            {
-                return cell;
-            }
-
-            return BoardAnalysis.FindBestPurifyAreaTarget(context.Attempt);
+            return ResolveTarget(
+                context,
+                cell => IsPurifyAreaTargetValid(context.Attempt, cell),
+                FindBestPurifyAreaTarget);
         }
 
         private static BoardCell ResolveFreezeTarget(PlayerActionContext context)
         {
-            if (TryResolveExplicitTarget(context, out BoardCell cell) && cell.IsCorrupted)
-            {
-                return cell;
-            }
-
-            return BoardAnalysis.FindBestFreezeTarget(context.Attempt);
+            return ResolveTarget(
+                context,
+                cell => cell.IsCorrupted,
+                static attempt => BoardAnalysis.FindBestFreezeTarget(attempt));
         }
 
         private static BoardCell ResolveSacrificeTarget(PlayerActionContext context)
         {
-            if (TryResolveExplicitTarget(context, out BoardCell cell) &&
-                cell.Archetype != CellArchetype.LifeRoot &&
-                cell.Archetype != CellArchetype.SacredSite &&
-                !cell.IsDead)
-            {
-                return cell;
-            }
-
-            return BoardAnalysis.FindBestSacrificeTarget(context.Attempt);
+            return ResolveTarget(
+                context,
+                cell =>
+                    cell.Archetype != CellArchetype.LifeRoot &&
+                    cell.Archetype != CellArchetype.SacredSite &&
+                    !cell.IsDead,
+                static attempt => BoardAnalysis.FindBestSacrificeTarget(attempt));
         }
 
         private static BoardCell ResolveRestoreLandTarget(PlayerActionContext context)
         {
-            if (TryResolveExplicitTarget(context, out BoardCell cell) && cell.Type == CellType.DeadCell)
+            return ResolveTarget(
+                context,
+                cell => cell.Type == CellType.DeadCell,
+                static attempt => BoardAnalysis.FindBestRestoreLandTarget(attempt));
+        }
+
+        public static IReadOnlyList<BoardCell> GetPurifyAreaCells(Attempt attempt, Vector3 centerCoords)
+        {
+            if (attempt?.Board is not SquareGameBoard board)
             {
-                return cell;
+                return Array.Empty<BoardCell>();
             }
 
-            return BoardAnalysis.FindBestRestoreLandTarget(context.Attempt);
+            return GetPurifyAreaCells(board, centerCoords, attempt.World.CurrentTick);
+        }
+
+        public static IReadOnlyList<BoardCell> GetPurifyAreaCells(
+            SquareGameBoard board,
+            Vector3 centerCoords,
+            int turnsElapsed)
+        {
+            if (board == null)
+            {
+                return Array.Empty<BoardCell>();
+            }
+
+            BoardCell centerCell = board.GetBoardCell(centerCoords);
+            if (centerCell == null)
+            {
+                return Array.Empty<BoardCell>();
+            }
+
+            int targetCount = PurifyAreaBaseCellCount + Math.Abs(turnsElapsed) % PurifyAreaGrowthCycleTurns;
+            List<BoardCell> areaCells = new List<BoardCell>(targetCount);
+            HashSet<BoardCell> included = new HashSet<BoardCell>();
+
+            TryAddAreaCell(areaCells, included, centerCell);
+            TryAddAreaCell(areaCells, included, board.GetCell(centerCell.X - 1, centerCell.Y));
+            TryAddAreaCell(areaCells, included, board.GetCell(centerCell.X + 1, centerCell.Y));
+            TryAddAreaCell(areaCells, included, board.GetCell(centerCell.X, centerCell.Y - 1));
+            TryAddAreaCell(areaCells, included, board.GetCell(centerCell.X, centerCell.Y + 1));
+
+            System.Random random = CreatePurifyAreaRandom(board, turnsElapsed);
+            for (int ring = 1; areaCells.Count < targetCount && ring <= Math.Max(board.Width, board.Height); ring++)
+            {
+                List<BoardCell> ringCandidates = board.AllCells
+                    .Where(cell => !included.Contains(cell) && GetChebyshevDistance(centerCell, cell) == ring)
+                    .ToList();
+
+                Shuffle(ringCandidates, random);
+                foreach (BoardCell candidate in ringCandidates)
+                {
+                    TryAddAreaCell(areaCells, included, candidate);
+                    if (areaCells.Count >= targetCount)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            return areaCells;
+        }
+
+        public static bool IsPurifyAreaTargetValid(Attempt attempt, BoardCell centerCell)
+        {
+            if (attempt?.Board is not SquareGameBoard board || centerCell == null || centerCell.IsDead)
+            {
+                return false;
+            }
+
+            IReadOnlyList<BoardCell> areaCells = GetPurifyAreaCells(attempt, centerCell.Coords);
+            if (areaCells.Count == 0)
+            {
+                return false;
+            }
+
+            foreach (BoardCell cell in areaCells)
+            {
+                if (cell.IsCorrupted)
+                {
+                    return true;
+                }
+
+                if (board.GetNeighbors(cell).Any(neighbor => neighbor.IsCorrupted))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static bool TryResolveExplicitTarget(PlayerActionContext context, out BoardCell cell)
         {
             return context.TryGetTargetCell(out cell);
+        }
+
+        private static BoardCell ResolveTarget(
+            PlayerActionContext context,
+            Func<BoardCell, bool> explicitTargetValidator,
+            Func<Attempt, BoardCell> fallbackResolver)
+        {
+            if (TryResolveExplicitTarget(context, out BoardCell explicitCell))
+            {
+                return explicitTargetValidator(explicitCell) ? explicitCell : null;
+            }
+
+            return fallbackResolver(context.Attempt);
+        }
+
+        private static BoardCell FindBestPurifyAreaTarget(Attempt attempt)
+        {
+            if (attempt?.Board is not SquareGameBoard board)
+            {
+                return null;
+            }
+
+            return board.AllCells
+                .Where(cell => !cell.IsDead)
+                .OrderByDescending(cell => ScorePurifyAreaTarget(attempt, cell))
+                .FirstOrDefault(cell => ScorePurifyAreaTarget(attempt, cell) > 0f);
+        }
+
+        private static float ScorePurifyAreaTarget(Attempt attempt, BoardCell centerCell)
+        {
+            if (!IsPurifyAreaTargetValid(attempt, centerCell) || attempt?.Board is not SquareGameBoard board)
+            {
+                return 0f;
+            }
+
+            HashSet<BoardCell> threatenedCorruption = new HashSet<BoardCell>();
+            foreach (BoardCell areaCell in GetPurifyAreaCells(attempt, centerCell.Coords))
+            {
+                if (areaCell.IsCorrupted)
+                {
+                    threatenedCorruption.Add(areaCell);
+                }
+
+                foreach (BoardCell neighbor in board.GetNeighbors(areaCell).Where(neighbor => neighbor.IsCorrupted))
+                {
+                    threatenedCorruption.Add(neighbor);
+                }
+            }
+
+            return threatenedCorruption.Sum(cell =>
+                4f +
+                BoardAnalysis.CountAdjacentRoots(board, cell) * 3f +
+                BoardAnalysis.CountAdjacentSprings(board, cell) * 2f +
+                cell.CorruptedTurns);
+        }
+
+        private static void TryAddAreaCell(
+            ICollection<BoardCell> areaCells,
+            ISet<BoardCell> included,
+            BoardCell candidate)
+        {
+            if (candidate == null || !included.Add(candidate))
+            {
+                return;
+            }
+
+            areaCells.Add(candidate);
+        }
+
+        private static int GetChebyshevDistance(BoardCell centerCell, BoardCell otherCell)
+        {
+            return Math.Max(
+                Math.Abs(centerCell.X - otherCell.X),
+                Math.Abs(centerCell.Y - otherCell.Y));
+        }
+
+        private static System.Random CreatePurifyAreaRandom(
+            SquareGameBoard board,
+            int turnsElapsed)
+        {
+            int hash = board.Seed;
+            hash = unchecked(hash * 397) ^ turnsElapsed;
+            return new System.Random(hash);
+        }
+
+        private static void Shuffle<T>(IList<T> values, System.Random random)
+        {
+            for (int index = values.Count - 1; index > 0; index--)
+            {
+                int swapIndex = random.Next(index + 1);
+                (values[index], values[swapIndex]) = (values[swapIndex], values[index]);
+            }
         }
     }
 }

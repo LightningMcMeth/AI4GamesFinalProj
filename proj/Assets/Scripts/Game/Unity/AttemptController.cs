@@ -111,6 +111,7 @@ namespace AI4GamesFinalProj.Gameplay
                 return;
             }
 
+            PollKeyboardPreviewSelection();
             PollRegisteredInputSources();
             attemptRunner.Update();
         }
@@ -276,6 +277,19 @@ namespace AI4GamesFinalProj.Gameplay
                 {
                     attemptRunner.EnqueueInput(request);
                 }
+            }
+        }
+
+        private void PollKeyboardPreviewSelection()
+        {
+            if (keyboardInputSource == null || CurrentAttempt == null || attemptRunner == null || !attemptRunner.IsWaitingForPlayerInput)
+            {
+                return;
+            }
+
+            if (keyboardInputSource.TryGetPreviewOfferIndex(CurrentAttempt, out int offerIndex))
+            {
+                TrySelectOfferedPreview(offerIndex);
             }
         }
 

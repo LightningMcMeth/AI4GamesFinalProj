@@ -219,7 +219,7 @@ namespace AI4GamesFinalProj.Gameplay
                 return;
             }
 
-            foreach (BoardCell cell in GetPreviewCells(centerCell, previewProfile))
+            foreach (BoardCell cell in GetPreviewCells(actionId, centerCell, previewProfile))
             {
                 if (!overlayRenderers.TryGetValue(new Vector2Int(cell.X, cell.Y), out SpriteRenderer renderer))
                 {
@@ -249,8 +249,18 @@ namespace AI4GamesFinalProj.Gameplay
             return action.CanExecute(context);
         }
 
-        private IEnumerable<BoardCell> GetPreviewCells(BoardCell centerCell, PreviewProfile previewProfile)
+        private IEnumerable<BoardCell> GetPreviewCells(string actionId, BoardCell centerCell, PreviewProfile previewProfile)
         {
+            if (string.Equals(actionId, "purify_area", StringComparison.OrdinalIgnoreCase))
+            {
+                foreach (BoardCell cell in PrototypeSpellbook.GetPurifyAreaCells(attemptController.CurrentAttempt, centerCell.Coords))
+                {
+                    yield return cell;
+                }
+
+                yield break;
+            }
+
             if (previewProfile.Radius <= 0)
             {
                 yield return centerCell;

@@ -4,9 +4,9 @@ namespace AI4GamesFinalProj.Gameplay
 {
     public sealed class KeyboardOfferInputSource : IAttemptInputSource
     {
-        public bool TryCreateRequest(Attempt attempt, out PlayerActionRequest request)
+        public bool TryGetPreviewOfferIndex(Attempt attempt, out int offerIndex)
         {
-            request = null;
+            offerIndex = -1;
             if (attempt == null)
             {
                 return false;
@@ -19,13 +19,19 @@ namespace AI4GamesFinalProj.Gameplay
                     continue;
                 }
 
-                request = new PlayerActionRequest(
-                    attempt.CurrentOffers[index].Action.Id,
-                    PlayerInputKind.Keyboard,
-                    null,
-                    $"Offer{index + 1}");
-
+                offerIndex = index;
                 return true;
+            }
+
+            return false;
+        }
+
+        public bool TryCreateRequest(Attempt attempt, out PlayerActionRequest request)
+        {
+            request = null;
+            if (attempt == null)
+            {
+                return false;
             }
 
             if (WasEndTurnKeyPressed())
