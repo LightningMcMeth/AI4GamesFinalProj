@@ -326,7 +326,7 @@ namespace AI4GamesFinalProj.Gameplay
             spriteRenderer.sprite = GetOverlaySprite();
             spriteRenderer.color = Color.clear;
             spriteRenderer.sortingOrder = sortingOrder;
-            
+
             return spriteRenderer;
         }
 
@@ -390,7 +390,7 @@ namespace AI4GamesFinalProj.Gameplay
             previewProfiles["mana_bloom"] = new PreviewProfile(PreviewFamily.SingleGrowth, 0);
             previewProfiles["purify_area"] = new PreviewProfile(PreviewFamily.AreaRestore, 1);
             previewProfiles["freeze_spread"] = new PreviewProfile(PreviewFamily.AreaFreeze, 1);
-            previewProfiles["sacrifice_cell"] = new PreviewProfile(PreviewFamily.SingleDestruction, 0);
+            previewProfiles["consecrate_cell"] = new PreviewProfile(PreviewFamily.SingleDestruction, 0);
         }
 
         private static Sprite GetOverlaySprite()

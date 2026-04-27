@@ -106,7 +106,7 @@ namespace AI4GamesFinalProj.Gameplay
                 "Fortify Cell",
                 "Adds a short defensive barrier to a threatened cell.",
                 2,
-                0,
+                1,
                 score: context =>
                 {
                     BoardCell target = ResolveFortifyTarget(context);
@@ -124,10 +124,11 @@ namespace AI4GamesFinalProj.Gameplay
                 },
                 canExecute: context =>
                     context.World.Mana >= 2 &&
+                    context.World.Essence >= 1 &&
                     ResolveFortifyTarget(context) != null,
                 execute: context =>
                 {
-                    if (!context.World.TrySpendMana(2))
+                    if (!context.World.TrySpendMana(2) || !context.World.TrySpendEssence(1))
                     {
                         return;
                     }
@@ -144,7 +145,7 @@ namespace AI4GamesFinalProj.Gameplay
                 "Mana Bloom",
                 "Turns a healthy cell into a Mana Spring.",
                 4,
-                0,
+                4,
                 score: context =>
                 {
                     BoardCell target = ResolveManaBloomTarget(context);
@@ -153,16 +154,28 @@ namespace AI4GamesFinalProj.Gameplay
                         return 0f;
                     }
 
-                    float manaPressure = context.World.Mana <= 3 ? 14f : 6f;
-                    return manaPressure + (context.World.DangerLevel < 0.6f ? 8f : 0f);
+                    float manaMissingRatio = 1f - ((float)context.World.Mana / context.World.MaxMana);
+                    float economyNeed = manaMissingRatio * 18f;
+
+                    float earlyGameBonus = context.World.TurnNumber <= 8 ? 10f : 0f;
+                    float safeBoardBonus = context.World.DangerLevel <= 0.35f ? 8f : 0f;
+                    float dangerPenalty = context.World.DangerLevel > 0.55f ? 20f : 0f;
+
+                    float targetQuality =
+                        BoardAnalysis.CountAdjacentRoots(context.SquareBoard, target) * 4f +
+                        BoardAnalysis.CountSacredNeighbors(context.SquareBoard, target) * 2f -
+                        BoardAnalysis.CountCorruptedNeighbors(context.SquareBoard, target) * 5f;
+
+                    return 8f + economyNeed + earlyGameBonus + safeBoardBonus + targetQuality - dangerPenalty;
                 },
                 canExecute: context =>
                     context.World.Mana >= 4 &&
-                    context.World.DangerLevel <= 0.55f &&
+                    context.World.Essence >= 4 &&
+                    context.World.DangerLevel <= 0.65f &&
                     ResolveManaBloomTarget(context) != null,
                 execute: context =>
                 {
-                    if (!context.World.TrySpendMana(4))
+                    if (!context.World.TrySpendMana(4) || !context.World.TrySpendEssence(4))
                     {
                         return;
                     }
@@ -186,7 +199,7 @@ namespace AI4GamesFinalProj.Gameplay
                 "Purify Area",
                 "Cleanses a cluster of nearby corruption.",
                 6,
-                0,
+                2,
                 score: context =>
                 {
                     BoardCell target = ResolvePurifyAreaTarget(context);
@@ -206,13 +219,14 @@ namespace AI4GamesFinalProj.Gameplay
                     BoardCell target = ResolvePurifyAreaTarget(context);
 
                     return context.World.Mana >= 6 &&
+                        context.World.Essence >= 2 &&
                         context.World.DangerLevel >= 0.45f &&
                         target != null &&
                         ScorePurifyAreaTarget(context.Attempt, target) >= 10f;
                 },
                 execute: context =>
                 {
-                    if (!context.World.TrySpendMana(6))
+                    if (!context.World.TrySpendMana(6) || !context.World.TrySpendEssence(2))
                     {
                         return;
                     }
@@ -247,13 +261,34 @@ namespace AI4GamesFinalProj.Gameplay
                         return 0f;
                     }
 
-                    return 15f +
-                        BoardAnalysis.CountCorruptedNeighbors(context.SquareBoard, target) * 4f +
-                        BoardAnalysis.CountAdjacentRoots(context.SquareBoard, target) * 4f;
+                    int corruptedNeighbors = BoardAnalysis.CountCorruptedNeighbors(context.SquareBoard, target);
+                    int adjacentRoots = BoardAnalysis.CountAdjacentRoots(context.SquareBoard, target);
+                    int adjacentSprings = BoardAnalysis.CountAdjacentSprings(context.SquareBoard, target);
+
+                    float dangerBonus = context.World.DangerLevel * 18f;
+                    float earlyPenalty = context.World.TurnNumber <= 3 ? 10f : 0f;
+
+                    return 6f +
+                        dangerBonus +
+                        corruptedNeighbors * 3f +
+                        adjacentRoots * 6f +
+                        adjacentSprings * 3f -
+                        target.FrozenTurns * 8f -
+                        earlyPenalty;
                 },
                 canExecute: context =>
-                    context.World.Mana >= 2 &&
-                    ResolveFreezeTarget(context) != null,
+                {
+                    BoardCell target = ResolveFreezeTarget(context);
+
+                    return context.World.Mana >= 2 &&
+                        target != null &&
+                        target.FrozenTurns <= 0 &&
+                        (
+                            context.World.DangerLevel >= 0.25f ||
+                            BoardAnalysis.CountAdjacentRoots(context.SquareBoard, target) > 0 ||
+                            BoardAnalysis.CountAdjacentSprings(context.SquareBoard, target) > 0
+                        );
+                },
                 execute: context =>
                 {
                     if (!context.World.TrySpendMana(2))
@@ -277,11 +312,11 @@ namespace AI4GamesFinalProj.Gameplay
         private static PlayerAction CreateSacrificeCell()
         {
             return new PlayerAction(
-                "sacrifice_cell",
-                "Sacrifice Cell",
-                "Kills one non-core tile to create a dead buffer.",
+                "consecrate_cell",
+                "Consecrate Cell",
+                "Transforms one non-core tile into a Sacred Cell.",
                 0,
-                0,
+                2,
                 score: context =>
                 {
                     BoardCell target = ResolveSacrificeTarget(context);
@@ -293,11 +328,25 @@ namespace AI4GamesFinalProj.Gameplay
                     return context.World.DangerLevel * 20f +
                         BoardAnalysis.CountCorruptedNeighbors(context.SquareBoard, target) * 3f;
                 },
-                canExecute: context => ResolveSacrificeTarget(context) != null,
+                canExecute: context =>
+                    context.World.Essence >= 2 &&
+                    ResolveSacrificeTarget(context) != null,
                 execute: context =>
                 {
+                    if (!context.World.TrySpendEssence(2))
+                    {
+                        return;
+                    }
+
                     BoardCell target = ResolveSacrificeTarget(context);
-                    target?.MakeDead();
+                    if (target == null)
+                    {
+                        return;
+                    }
+
+                    target.Purify();
+                    target.TransformTo(CellArchetype.SacredSite);
+                    target.AddBarrier(2);
                 });
         }
 
