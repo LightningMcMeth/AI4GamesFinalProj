@@ -1,0 +1,293 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+
+namespace AI4GamesFinalProj.Gameplay
+{
+    //This is our main orchestrator
+    //that's it lol
+    public sealed class AttemptRunner
+    {
+        private readonly Queue<PlayerActionRequest> pendingRequests = new Queue<PlayerActionRequest>();
+        private readonly UtilityAiActionSelector actionSelector;
+        private readonly UtilityAiTurnDriver turnDriver;
+        private readonly bool enablePlayerActions;
+        private string selectedPreviewActionId = string.Empty;
+
+        public Attempt Attempt { get; }
+
+        public AttemptLoopState State { get; private set; }
+
+        public bool IsWaitingForPlayerInput => State == AttemptLoopState.WaitingForPlayerInput;
+
+        public string SelectedPreviewActionId => selectedPreviewActionId;
+
+        public bool HasSelectedPreviewAction => !string.IsNullOrWhiteSpace(selectedPreviewActionId);
+
+        public event Action<Attempt> AttemptStarted;
+        public event Action<Attempt> WaitingForPlayerInput;
+        public event Action<Attempt, PlayerActionRequest, PlayerAction> TurnResolved;
+        public event Action<Attempt> AttemptEnded;
+        public event Action<Attempt, string> PreviewActionChanged;
+
+        public AttemptRunner(
+            Attempt attempt,
+            UtilityAiTurnDriver turnDriver,
+            UtilityAiActionSelector actionSelector,
+            bool enablePlayerActions = true)
+        {
+            Attempt = attempt ?? throw new ArgumentNullException(nameof(attempt));
+            this.turnDriver = turnDriver ?? throw new ArgumentNullException(nameof(turnDriver));
+            this.actionSelector = actionSelector ?? throw new ArgumentNullException(nameof(actionSelector));
+            this.enablePlayerActions = enablePlayerActions;
+            State = AttemptLoopState.NotStarted;
+        }
+
+        public void Start()
+        {
+            if (State != AttemptLoopState.NotStarted)
+            {
+                return;
+            }
+
+            AttemptStarted?.Invoke(Attempt);
+            BeginTurn();
+        }
+
+        public void EnqueueInput(PlayerActionRequest request)
+        {
+            if (request == null)
+            {
+                throw new ArgumentNullException(nameof(request));
+            }
+
+            if (State == AttemptLoopState.Completed)
+            {
+                return;
+            }
+
+            pendingRequests.Enqueue(request);
+        }
+
+        public bool TrySelectPreviewAction(string actionId)
+        {
+            if (!enablePlayerActions || State != AttemptLoopState.WaitingForPlayerInput || string.IsNullOrWhiteSpace(actionId))
+            {
+                return false;
+            }
+
+            bool isOffered = Attempt.CurrentOffers.Any(offer =>
+                string.Equals(offer.Action.Id, actionId, StringComparison.OrdinalIgnoreCase));
+            if (!isOffered)
+            {
+                return false;
+            }
+
+            if (string.Equals(selectedPreviewActionId, actionId, StringComparison.OrdinalIgnoreCase))
+            {
+                ClearSelectedPreviewAction();
+                return true;
+            }
+
+            selectedPreviewActionId = actionId;
+            PreviewActionChanged?.Invoke(Attempt, selectedPreviewActionId);
+            return true;
+        }
+
+        public void ClearSelectedPreviewAction()
+        {
+            if (string.IsNullOrWhiteSpace(selectedPreviewActionId))
+            {
+                return;
+            }
+
+            selectedPreviewActionId = string.Empty;
+            PreviewActionChanged?.Invoke(Attempt, selectedPreviewActionId);
+        }
+
+        public bool TrySubmitSelectedPreviewToBoard(Vector3 targetCoords)
+        {
+            if (!enablePlayerActions || State != AttemptLoopState.WaitingForPlayerInput || !HasSelectedPreviewAction)
+            {
+                return false;
+            }
+
+            pendingRequests.Enqueue(new PlayerActionRequest(
+                selectedPreviewActionId,
+                PlayerInputKind.Mouse,
+                targetCoords,
+                "BoardUi"));
+
+            ClearSelectedPreviewAction();
+            return true;
+        }
+
+        public void Update()
+        {
+            if (State == AttemptLoopState.ResolvingTurn && !enablePlayerActions)
+            {
+                FinalizeCurrentTurn();
+                return;
+            }
+
+            if (State != AttemptLoopState.WaitingForPlayerInput || pendingRequests.Count == 0)
+            {
+                return;
+            }
+
+            PlayerActionRequest request = pendingRequests.Dequeue();
+            State = AttemptLoopState.ResolvingTurn;
+            ClearSelectedPreviewAction();
+
+            if (request.IsEndTurnRequest)
+            {
+
+                if (enablePlayerActions && !Attempt.CanEndTurnEarly && Attempt.CurrentOffers.Count > 0)
+                {
+                    State = AttemptLoopState.WaitingForPlayerInput;
+                    WaitingForPlayerInput?.Invoke(Attempt);
+
+                    return;
+                }
+
+                FinalizeCurrentTurn();
+                
+                return;
+            }
+
+            bool resolved = turnDriver.TryResolvePlayerAction(Attempt, request, out PlayerAction action);
+            if (resolved)
+            {
+                Attempt.RegisterResolvedAction(action);
+                TurnResolved?.Invoke(Attempt, request, action);
+
+                if (TryResolveVirusClearWin())
+                {
+                    State = AttemptLoopState.Completed;
+                    AttemptEnded?.Invoke(Attempt);
+                    return;
+                }
+            }
+            else
+            {
+                State = AttemptLoopState.WaitingForPlayerInput;
+                WaitingForPlayerInput?.Invoke(Attempt);
+
+                return;
+            }
+
+            if (Attempt.IsComplete || !Attempt.CanResolveMoreActions)
+            {
+                FinalizeCurrentTurn();
+
+                return;
+            }
+
+            RefreshOffers();
+        }
+
+        private void BeginTurn()
+        {
+            ApplyBeginTurnState();
+            if (Attempt.IsComplete)
+            {
+                State = AttemptLoopState.Completed;
+                AttemptEnded?.Invoke(Attempt);
+
+                return;
+            }
+
+            if (!enablePlayerActions)
+            {
+                Attempt.EndActionPhase();
+                Attempt.SetCurrentOffers(Array.Empty<PlayerActionOffer>());
+                State = AttemptLoopState.ResolvingTurn;
+                
+                return;
+            }
+
+            Attempt.BeginActionPhase();
+            RefreshOffers();
+        }
+
+        private void RefreshOffers()
+        {
+            ClearSelectedPreviewAction();
+            Attempt.SetCurrentOffers(actionSelector.BuildTopOffers(Attempt));
+            State = AttemptLoopState.WaitingForPlayerInput;
+            WaitingForPlayerInput?.Invoke(Attempt);
+        }
+
+        private void FinalizeCurrentTurn()
+        {
+            Attempt.EndActionPhase();
+            bool advanced = turnDriver.CompleteTurn(Attempt);
+            if (advanced)
+            {
+                ApplyEndTurnState();
+            }
+
+            if (!advanced || Attempt.IsComplete)
+            {
+                State = AttemptLoopState.Completed;
+                AttemptEnded?.Invoke(Attempt);
+
+                return;
+            }
+
+            BeginTurn();
+        }
+
+        private void ApplyBeginTurnState()
+        {
+            foreach (BoardCell cell in Attempt.Cells)
+            {
+                cell.AdvanceTurn();
+            }
+
+            SquareGameBoard board = Attempt.Board as SquareGameBoard;
+            Attempt.World.CollectResources(board);
+            Attempt.World.SetDangerLevel(BoardAnalysis.ComputeDangerLevel(Attempt));
+            Attempt.World.CheckLoseCondition();
+        }
+
+        private void ApplyEndTurnState()
+        {
+            Attempt.World.UpdateLifeRootsRemaining(BoardAnalysis.CountAliveRoots(Attempt));
+            Attempt.World.SetDangerLevel(BoardAnalysis.ComputeDangerLevel(Attempt));
+
+            if (Attempt.World.CheckLoseCondition())
+            {
+                return;
+            }
+
+            TryResolveVirusClearWin();
+            if (Attempt.World.HasWon)
+            {
+                return;
+            }
+
+            if (Attempt.World.CurrentTick >= Attempt.World.TotalTicks)
+            {
+                Attempt.World.Win("You survived the shrinking territory.");
+            }
+        }
+
+        private bool TryResolveVirusClearWin()
+        {
+            if (Attempt.World.HasEnded)
+            {
+                return Attempt.World.HasWon;
+            }
+
+            if (Attempt.Cells.Any(cell => cell.IsCorrupted))
+            {
+                return false;
+            }
+
+            Attempt.World.Win("All virus cells have been cleared.");
+            return true;
+        }
+    }
+}

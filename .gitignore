@@ -1,54 +1,5 @@
-﻿############################
-# Unity Generated Folders
-############################
-My project/Library/
-My project/Temp/
-My project/Obj/
-My project/Build/
-My project/Builds/
-My project/Logs/
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
 
-############################
-# IDE / Editor
-############################
-.vs/
-.vscode/
-.idea/
-*.sln
-*.csproj
-*.unityproj
-*.user
-*.userprefs
-*.pidb
-*.booproj
-*.vsconfig
-
-############################
-# OS Files
-############################
-.DS_Store
-Thumbs.db
-
-############################
-# Build Artifacts
-############################
-*.apk
-*.aab
-*.ipa
-*.exe
-*.app
-
-############################
-# Crash / Logs
-############################
-sysinfo.txt
-
-############################
-# Optional: Rider / JetBrains
-############################
-*.DotSettings.user
-
-############################
-# Optional: Ignore local build paths
-############################
-buildDirLocation.txt
+/.vs
